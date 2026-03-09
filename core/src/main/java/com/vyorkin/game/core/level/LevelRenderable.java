@@ -14,26 +14,26 @@ import com.vyorkin.game.core.entities.EntityRenderer;
 
 public class LevelRenderable implements Renderable, Updatable, Disposable {
 	private Level level;
-	
+
 	private final EntityRenderer entityRenderer;
 	private final DebugRenderer debugRenderer;
 	private final HudRenderer hudRenderer;
 	private final Countdown countdown;
-	
+
 	private final ShapeRenderer shapeRenderer;
 	private final GameCamera camera;
-	
+
 	private long seed;
-	
+
 	public LevelRenderable(LevelView view, GameCamera camera, Countdown countdown) {
 		this.camera = camera;
 		this.shapeRenderer = new ShapeRenderer();
 		this.seed = MathUtils.random(100);
-		
+
 		this.entityRenderer = new EntityRenderer(shapeRenderer);
 		this.debugRenderer = new DebugRenderer(shapeRenderer, view);
 		this.hudRenderer = new HudRenderer();
-		
+
 		this.countdown = countdown;
 	}
 
@@ -42,32 +42,41 @@ public class LevelRenderable implements Renderable, Updatable, Disposable {
 		entityRenderer.setLevel(level);
 		this.seed++;
 	}
-	
+
 	@Override
-	public void update(float delta) {	
-		MathUtils.random.setSeed(seed);		
+	public void update(float delta) {
+		MathUtils.random.setSeed(seed);
 	}
-	
+
 	@Override
 	public void render(float delta) {
 		shapeRenderer.setProjectionMatrix(camera.combined);
-		
+
 		renderEntities(delta);
-		
+		renderEntityText();
+
 		if (E.preferences.isDeveloperMode()) {
 			debugRenderer.render(level, delta);
 		}
-		
+
 		hudRenderer.render(level, delta);
 		countdown.render(delta);
 	}
-	
+
 	private void renderEntities(float delta) {
 		shapeRenderer.begin(ShapeType.Filled);
 		for (Entity entity : level.getEntities()) {
 			entityRenderer.render(entity, delta);
-		}	
+		}
 		shapeRenderer.end();
+	}
+
+	private void renderEntityText() {
+		E.batch.begin();
+		for (Entity entity : level.getEntities()) {
+			entityRenderer.renderText(entity);
+		}
+		E.batch.end();
 	}
 
 	@Override

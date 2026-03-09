@@ -1,65 +1,79 @@
 package com.vyorkin.game.core.entities;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Circle;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 
 import com.vyorkin.engine.base.Updatable;
 
 public abstract class Entity implements Updatable {
-	private static final float VELOCITY_MIN = 20;
-	private static final float VELOCITY_MAX = 40;
-	
 	private final int number;
+	private final String colorName;
+	private final Color displayColor;
 	private final Vector2 cell;
 	private final Circle shape;
-	private final float velocity;
-	
-	private boolean moving;
-	private boolean marked;
-	
-	protected Entity(Vector2 cell, Circle shape, int number) {
-		this.velocity = MathUtils.random(VELOCITY_MIN, VELOCITY_MAX);
-		
-		this.marked = false;
-		this.moving = false;
+
+	private boolean faceUp;
+	private boolean matched;
+
+	protected Entity(Vector2 cell, Circle shape, int number, String colorName, Color displayColor) {
 		this.number = number;
+		this.colorName = colorName;
+		this.displayColor = displayColor;
 		this.cell = cell;
 		this.shape = shape;
+		this.faceUp = false;
+		this.matched = false;
 	}
-	
+
 	public boolean isClicked(Vector2 position) {
-		return !marked && shape.contains(position.x, position.y);
+		return !matched && shape.contains(position.x, position.y);
 	}
-	
+
 	public Circle getShape() {
 		return shape;
 	}
-	
-	public boolean isMoving() {
-		return moving;
+
+	public boolean isFaceUp() {
+		return faceUp;
 	}
-	
+
+	public void setFaceUp(boolean faceUp) {
+		this.faceUp = faceUp;
+	}
+
+	public boolean isMatched() {
+		return matched;
+	}
+
+	public void setMatched(boolean matched) {
+		this.matched = matched;
+	}
+
 	public boolean isMarked() {
-		return marked;
+		return matched;
 	}
-	
+
 	public void mark() {
-		this.marked = true;
+		this.matched = true;
 	}
-	
+
 	public int getNumber() {
 		return number;
 	}
-	
+
+	public String getColorName() {
+		return colorName;
+	}
+
+	public Color getDisplayColor() {
+		return displayColor;
+	}
+
 	public Vector2 getCell() {
 		return cell;
 	}
-	
-	public float getVelocity() {
-		return velocity;
-	}
-	
+
 	@Override
 	public void update(float delta) {
 	}

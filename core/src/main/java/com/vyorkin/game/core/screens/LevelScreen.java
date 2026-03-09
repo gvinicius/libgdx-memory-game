@@ -32,56 +32,56 @@ import com.vyorkin.game.core.resources.GameSound;
 
 public class LevelScreen extends GameScreen {
 	private final PlayerProfile profile;
-	
+
 	private final LevelFactory factory;
 	private final LevelManager manager;
-	
+
 	private Level level;
-	
+
 	private final LevelView view;
 	private final Countdown countdown;
 	private final LevelRenderable levelRenderable;
 	private final CursorRenderer cursorRenderer;
-	
+
 	private final GameCamera camera;
-	
+
 	public LevelScreen(GameSettings settings, PlayerProfile profile) {
 		this.profile = profile;
-		
+
 		this.manager = new LevelManager(profile);
 		this.view = new LevelView(settings);
 		this.factory = new LevelFactory(view);
-		
+
 		this.camera = new GameCamera(
-			E.settings.width, 
+			E.settings.width,
 			E.settings.height
 		);
 		this.countdown = new Countdown(
-			Gdx.graphics.getWidth(), 
+			Gdx.graphics.getWidth(),
 			Gdx.graphics.getHeight()
 		);
 		this.levelRenderable = new LevelRenderable(view, camera, countdown);
 		this.cursorRenderer = new CursorRenderer();
 	}
-	
+
 	private void startLevel() {
 		E.music.stop();
-		
+
 		final LevelMetadata metadata = manager.get(
 			profile.season, profile.number);
-		
+
 		this.level = factory.create(metadata);
 		this.levelRenderable.setLevel(level);
 
 		countdown.start(metadata.countdownTime, new Runnable() {
 			@Override
 			public void run() {
-				
+
 				level.setState(LevelState.Memorization);
-				
+
 				E.sounds.play(GameSound.START);
 				E.music.play(GameMusic.LEVEL);
-				
+
 				Timer.schedule(new Task() {
 					@Override
 					public void run() {
@@ -97,69 +97,66 @@ public class LevelScreen extends GameScreen {
 	public Camera getCamera() {
 		return camera;
 	}
-	
+
 	@Override
 	public void show() {
 		super.show();
 		Gdx.input.setInputProcessor(this);
-		
+
 		startLevel();
 	}
-	
+
 	@Override
 	protected void update(float delta) {
+		level.update(delta);
 		levelRenderable.update(delta);
 		camera.refresh();
 	}
-	
+
 	@Override
 	protected void draw(float delta) {
 		if (level.isDone()) {
 			FontHelper.draw("You done!", camera.getSize().cpy().div(2));
 		} else {
 			levelRenderable.render(delta);
-			// cursorRenderer.render(model, delta)
 		}
 	}
-	
+
 	@Override
 	public void resize(int width, int height) {
 		super.resize(width, height);
 		camera.resize(width, height);
 	}
-	
+
 	@Override
 	public boolean touchDown(int x, int y, int pointer, int button) {
 		if (level.getState() != LevelState.Playing)
 			return false;
-		
+
+		if (level.isWaitingForFlipBack())
+			return false;
+
 		Vector2 pos = camera.unproject(x, y);
-		
-		E.log("mouse(x, y): " + pos.x + ", " + pos.y);
-		
-//		effect.setPosition(pos.x, pos.y);
-//		effect.start();
-		
+
 		for (Entity entity : level.getEntities()) {
 			if (entity.isClicked(pos)) {
-				
+
 				Gdx.input.vibrate(100);
-				
-				if (entity.getNumber() == level.index) {
-					entity.mark();
-					level.index++;
+
+				boolean matched = level.flipCard(entity);
+
+				if (matched) {
 					E.sounds.play(GameSound.SELECT);
-				} else {
-					level.errors++;
+				} else if (level.isWaitingForFlipBack()) {
 					E.sounds.play(GameSound.ERROR);
 				}
-				
+
 				break;
 			}
 		}
-		
+
 		level.updateState();
-		
+
 		if (level.isDone()) {
 			if (level.getState() == LevelState.Lose) {
 				E.music.play(GameMusic.GAME_OVER);
@@ -170,83 +167,61 @@ public class LevelScreen extends GameScreen {
 					}
 				}, 8);
 			}
-			
+
 			else {
-				
+
 				profile.nextLevel();
 				profile.save();
-				
-				startLevel();	
+
+				startLevel();
 			}
 		}
-		
+
 		return true;
 	}
-	
+
 	@Override
 	public boolean keyDown(int keycode) {
 		if (keycode == Input.Keys.ESCAPE)
 			Gdx.app.exit();
-		
+
 		if (keycode == Input.Keys.BACK) {
 			countdown.cancel();
 			setDone();
 		}
-		
+
 		if (keycode == Input.Keys.D) {
 			E.preferences.toggleDeveloperMode();
 		}
 		return true;
 	}
-	
+
 	@Override
 	public void dispose() {
 		super.dispose();
-		
+
 		levelRenderable.dispose();
 	}
-	
+
 	@Override
 	public void load() {
 		E.assets.load(GameAtlas.LEVEL, TextureAtlas.class);
 		E.assets.load(GameSound.SELECT, Sound.class);
 		E.assets.load(GameSound.START, Sound.class);
 		E.assets.load(GameSound.ERROR, Sound.class);
-		
+
 		E.assets.load(GameMusic.LEVEL, Music.class);
 		E.assets.load(GameMusic.GAME_OVER, Music.class);
 	}
-	
+
 	@Override
 	protected void unload() {
 		E.assets.unload(GameAtlas.LEVEL);
 		E.assets.unload(GameSound.SELECT);
 		E.assets.unload(GameSound.START);
 		E.assets.unload(GameSound.ERROR);
-		
+
 		E.assets.unload(GameMusic.LEVEL);
 		E.assets.unload(GameMusic.GAME_OVER);
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
